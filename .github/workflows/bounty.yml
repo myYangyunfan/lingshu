@@ -1,0 +1,42 @@
+# 悬赏板数据定时刷新
+# 数据源 api.github.com（runner 在 GitHub 侧，无网络封锁问题）；
+# 生成器纯标准库；数据回推本分支，Pages（Deploy from branch）自动生效。
+name: bounty-board
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # 每 6 小时
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bounty-board
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 生成悬赏数据（状态机器推导）
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/gen_bounty_data.py
+
+      - name: 回推 bounty-data/issues.js
+        run: |
+          if [ -n "$(git status --porcelain bounty-data/issues.js)" ]; then
+            git config user.name  "bounty-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add bounty-data/issues.js
+            git commit -m "data(bounty): 定时刷新悬赏板快照"
+            git push
+          else
+            echo "数据无变化，跳过提交"
+          fi

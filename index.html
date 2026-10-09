@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵枢悬赏板 · Lingshu Bounty Board</title>
+<style>
+  /* —— 瑞士平面风格（International Typographic Style）——
+     强网格 / 大字号无衬线 / 黑白灰 + 瑞士红 / 直角 / 无阴影无渐变 */
+  :root {
+    --paper: #f6f5f1;   /* 冷白纸面 */
+    --ink: #141414;     /* 印刷黑 */
+    --red: #e2231a;     /* 瑞士红 */
+    --dim: #757570;     /* 灰调 */
+    --line: #141414;    /* 主分隔线（1px 黑） */
+    --hair: #d9d6cd;    /* 发丝线 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: var(--red); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px 80px; }
+
+  /* 顶部粗黑条 —— 海报式压顶 */
+  .bar { height: 10px; background: var(--ink); }
+  .bar .red { width: 120px; height: 10px; background: var(--red); }
+
+  /* 报头 */
+  .mast { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px;
+          border-bottom: 3px solid var(--ink); padding: 26px 0 18px; }
+  .mast .over { font-size: 11px; letter-spacing: .22em; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; }
+  .mast .over em { color: var(--red); font-style: normal; }
+  .mast h1 { font-size: clamp(44px, 7vw, 84px); font-weight: 800; line-height: .95;
+             letter-spacing: -0.03em; text-transform: uppercase; }
+  .mast h1 span { color: var(--red); }
+  .mast .right { text-align: right; font-size: 11px; line-height: 1.9; letter-spacing: .12em;
+                 color: var(--dim); text-transform: uppercase; padding-bottom: 6px; }
+  .mast .right b { color: var(--ink); }
+  .mast .right .sq { display: inline-block; width: 10px; height: 10px; background: var(--red); margin-right: 6px; }
+
+  /* 统计：大数字 + 细线列 */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line); }
+  .stat { padding: 18px 18px 14px 0; border-right: 1px solid var(--hair); }
+  .stat:last-child { border-right: none; }
+  .stat .num { font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .stat:first-child .num { color: var(--red); }
+  .stat .num small { font-size: 16px; font-weight: 700; letter-spacing: 0; }
+  .stat .lbl { font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-top: 8px; }
+
+  /* 主体：左栏（说明+筛选） / 右栏（标的清单） */
+  .main { display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding-top: 28px; }
+  aside { position: sticky; top: 24px; align-self: start; }
+  .escrow { border-top: 3px solid var(--ink); padding-top: 12px; font-size: 12.5px; line-height: 1.8; color: var(--dim); }
+  .escrow b { color: var(--ink); }
+  .escrow .hd { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--red); font-weight: 700; display: block; margin-bottom: 8px; }
+
+  .fgroup { margin-top: 26px; }
+  .fgroup .hd { font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+  .fitem { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer;
+           font-size: 14px; font-weight: 600; color: var(--dim); user-select: none; }
+  .fitem .sq { width: 11px; height: 11px; border: 1.5px solid var(--dim); flex: none; }
+  .fitem.on { color: var(--ink); }
+  .fitem.on .sq { background: var(--red); border-color: var(--red); }
+  .fitem:hover { color: var(--ink); }
+  #search { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--ink);
+            padding: 8px 0; font-size: 15px; font-weight: 600; outline: none; margin-top: 4px; }
+  #search::placeholder { color: var(--hair); }
+  #search:focus { border-color: var(--red); }
+
+  /* 标的行：表格化网格 + 发丝分隔 */
+  .list .head { display: grid; grid-template-columns: 70px 1fr 110px 110px; gap: 18px;
+                padding: 0 0 8px; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase;
+                color: var(--dim); border-bottom: 1px solid var(--line); }
+  .row { display: grid; grid-template-columns: 70px 1fr 110px 110px; gap: 18px;
+         padding: 20px 0; border-bottom: 1px solid var(--hair); position: relative; }
+  .row::before { content: ""; position: absolute; left: -32px; top: 0; bottom: 0; width: 4px; background: transparent; }
+  .row:hover::before { background: var(--red); }
+  .row .no { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: var(--dim); line-height: 1; }
+  .row:hover .no { color: var(--red); }
+  .row h3 { font-size: 17px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; }
+  .row h3 .cat { font-size: 10.5px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+                 color: var(--red); vertical-align: 2px; margin-right: 8px; }
+  .row .note { color: var(--dim); font-size: 12.5px; line-height: 1.7; margin-top: 6px; max-width: 640px; }
+  .row .byline { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-top: 8px; }
+  .row .pts { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; text-align: right; line-height: 1; }
+  .row .pts small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--dim); margin-top: 4px; }
+  .row .pts .unpriced { font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--dim); }
+  .row .st { text-align: right; }
+  .row .st .mk { display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; }
+  .row .st .mk.red { background: var(--red); }
+  .row .st .mk.ink { background: var(--ink); }
+  .row .st .mk.out { border: 1.5px solid var(--ink); }
+  .row .st .tx { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .empty { padding: 60px 0; color: var(--dim); font-size: 14px; letter-spacing: .1em; }
+
+  /* 表格段 */
+  .section { margin-top: 56px; }
+  .section > h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .section > h2 .no2 { color: var(--red); margin-right: 10px; }
+  .section > .hint { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase;
+       color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--line); padding: 8px 14px 8px 0; }
+  td { padding: 12px 14px 12px 0; font-size: 13.5px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  td.mono { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: var(--red); }
+  td .what { font-weight: 600; } td .by { color: var(--dim); }
+
+  footer { margin-top: 64px; border-top: 3px solid var(--ink); padding-top: 14px;
+           display: grid; grid-template-columns: 1fr auto; font-size: 11px; line-height: 1.9;
+           color: var(--dim); letter-spacing: .06em; }
+  footer .sig { text-transform: uppercase; letter-spacing: .2em; text-align: right; }
+  footer .sig em { color: var(--red); font-style: normal; }
+
+  @media (max-width: 900px) {
+    .mast { grid-template-columns: 1fr; }
+    .mast .right { text-align: left; }
+    .stats { grid-template-columns: repeat(2, 1fr); } .stat { border-bottom: 1px solid var(--hair); }
+    .main { grid-template-columns: 1fr; } aside { position: static; }
+    .list .head { display: none; }
+    .row { grid-template-columns: 60px 1fr; grid-template-areas: "no pts" "body st"; }
+    .row .no { grid-area: no; } .row .body { grid-area: body; }
+    .row .pts { grid-area: pts; } .row .st { grid-area: st; }
+  }
+</style>
+</head>
+<body>
+<div class="bar"><div class="red"></div></div>
+<div class="wrap">
+
+  <div class="mast">
+    <div>
+      <div class="over">FuRongJun-1999/Lingshu — <em>Open Issues as Fixed-Bid Bounties</em></div>
+      <h1>灵枢悬赏板<br><span>BOUNTY BOARD</span></h1>
+    </div>
+    <div class="right">
+      <div><span class="sq"></span>GRID NO. 83CCE59</div>
+      <div>SNAPSHOT <b id="updated"></b></div>
+      <div>REF. <a href="https://clawhunt.store/marketplace" target="_blank">CLAWHUNT MARKETPLACE</a></div>
+      <div>STYLE — INTERNATIONAL TYPOGRAPHIC</div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main">
+    <aside>
+      <div class="escrow">
+        <span class="hd">⚖ 托管规则 · ESCROW</span>
+        贡献点不是现金。标的只有在 <b>PR 被上游采纳（合入 main）且附复跑命令与读数</b>后，
+        才按「交付验收」入账；未经独立复跑的结论不入账——这是本仓的纪律，也是本板的托管规则。
+      </div>
+      <div class="fgroup">
+        <div class="hd">分类 / Category</div>
+        <div id="fcat"></div>
+      </div>
+      <div class="fgroup">
+        <div class="hd">状态 / Status</div>
+        <div id="fst"></div>
+      </div>
+      <div class="fgroup">
+        <div class="hd">检索 / Search</div>
+        <input id="search" placeholder="标题 · 编号">
+      </div>
+    </aside>
+
+    <div class="list">
+      <div class="head"><div>NO.</div><div>标的 / Issue</div><div style="text-align:right">赏金</div><div style="text-align:right">状态</div></div>
+      <div id="grid"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="no2">A</span>本机红旗 — 新标的候选</h2>
+    <div class="hint">该机 Win11 / py3.12 / numpy 2.5.1 快档实测 · 领取前先报 issue 复核是否环境性</div>
+    <table id="reds"></table>
+  </div>
+
+  <div class="section">
+    <h2><span class="no2">B</span>已交付展示 — 近期采纳</h2>
+    <div class="hint">快照窗口内被上游采纳的外部贡献</div>
+    <table id="done"></table>
+  </div>
+
+  <footer>
+    <div>
+      刷新数据：python refresh.py（api.github.com → 钉真实 IP → github.com 页面解析，三级回退；被墙网络下保留旧快照）。<br>
+      积分为主观标定，欢迎 issue 议价 · 本板为社区工具，与上游仓库无隶属关系。
+    </div>
+    <div class="sig">GRID · TYPE · <em>RED</em><br>LINGSHU BOUNTY BOARD 2026</div>
+  </footer>
+</div>
+
+<script src="bounty-data/issues.js"></script>
+<script>
+const D = window.BOUNTY_DATA;
+const CATS = ["全部", "world", "tests", "core", "nn", "intake", "建议"];
+const STS  = ["全部", "竞赏中", "已认领", "待验收"];
+let fCat = "全部", fSt = "全部", q = "";
+
+document.getElementById("updated").textContent = D.updated;
+
+const cnt = s => D.issues.filter(i => i.status === s).length;
+const openPts = D.issues.filter(i => i.status === "竞赏中").reduce((a, i) => a + (i.pts || 0), 0);
+document.getElementById("stats").innerHTML = [
+  [D.issues.length, "在板标的 / Listed"],
+  [cnt("竞赏中"), "竞赏中 / Open"],
+  [cnt("已认领"), "已认领 / Claimed"],
+  [cnt("待验收"), "待验收 / Delivered"],
+  [openPts + "<small> CP</small>", "在板赏金池 / Pool"],
+].map(([n, l]) => `<div class="stat"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join("");
+
+const mkFor = s => s === "竞赏中" ? "red" : (s === "已认领" ? "ink" : "out");
+
+function renderFilters() {
+  document.getElementById("fcat").innerHTML = CATS.map(c =>
+    `<div class="fitem ${c===fCat?"on":""}" data-k="cat" data-v="${c}"><span class="sq"></span>${c}</div>`).join("");
+  document.getElementById("fst").innerHTML = STS.map(s =>
+    `<div class="fitem ${s===fSt?"on":""}" data-k="st" data-v="${s}"><span class="sq"></span>${s}</div>`).join("");
+  document.querySelectorAll(".fitem").forEach(el => el.onclick = () => {
+    if (el.dataset.k === "cat") fCat = el.dataset.v; else fSt = el.dataset.v;
+    renderFilters(); renderGrid();
+  });
+}
+
+function renderGrid() {
+  const list = D.issues.filter(i =>
+    (fCat === "全部" || i.cat === fCat) &&
+    (fSt === "全部" || i.status === fSt) &&
+    (!q || (i.title + i.n + i.note + i.by).toLowerCase().includes(q.toLowerCase()))
+  );
+  document.getElementById("grid").innerHTML = list.length ? list.map(i => `
+    <div class="row">
+      <div class="no">#${String(i.n).padStart(2, "0")}</div>
+      <div class="body">
+        <h3><span class="cat">${i.cat} / ${i.diff}</span><a href="https://github.com/${D.repo}/issues/${i.n}" target="_blank">${i.title.replace(/^\[[^\]]+\]\s*/, "")}</a></h3>
+        ${i.note ? `<div class="note">${i.note}</div>` : ""}
+        <div class="byline">REPORTER — ${i.by}</div>
+      </div>
+      <div class="pts">${i.pts != null ? i.pts + "<small>CP</small>" : '<span class="unpriced">未定价</span>'}</div>
+      <div class="st"><span class="mk ${mkFor(i.status)}"></span><span class="tx">${i.status}</span></div>
+    </div>`).join("") : `<div class="empty">— 没有匹配的标的</div>`;
+}
+
+document.getElementById("reds").innerHTML =
+  `<tr><th style="width:52%">失败用例 / Failing Test</th><th>备注 / Note</th></tr>` +
+  D.localReds.map(r => `<tr><td class="mono">${r.t}</td><td style="color:var(--dim)">${r.note}</td></tr>`).join("");
+
+document.getElementById("done").innerHTML =
+  `<tr><th style="width:10%">PR</th><th style="width:28%">贡献者 / Author</th><th>交付内容 / Delivered</th></tr>` +
+  D.completed.map(c => `<tr><td><a href="https://github.com/${D.repo}/pull/${c.pr}" target="_blank" style="color:var(--red);font-weight:700">#${c.pr}</a></td>
+    <td class="by">${c.by}</td><td class="what">${c.what}</td></tr>`).join("");
+
+renderFilters();
+renderGrid();
+</script>
+</body>
+</html>
