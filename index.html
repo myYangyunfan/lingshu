@@ -115,6 +115,19 @@
   footer .sig { text-transform: uppercase; letter-spacing: .2em; text-align: right; }
   footer .sig em { color: var(--red); font-style: normal; }
 
+  /* 冒险者提示条：点击已被接取/待验收的标的时弹出 */
+  .toast { position: fixed; left: 24px; bottom: 24px; z-index: 60; display: none;
+           background: var(--ink); color: var(--paper); border-left: 6px solid var(--red);
+           padding: 16px 22px 16px 18px; max-width: 400px; cursor: pointer; }
+  .toast.show { display: block; }
+  .toast .hd { font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase;
+               color: var(--accent2, #fbbf24); font-weight: 700; margin-bottom: 8px; }
+  .toast .hd .sq { display: inline-block; width: 9px; height: 9px; background: var(--red); margin-right: 8px; }
+  .toast .msg { font-size: 14.5px; font-weight: 700; line-height: 1.55; }
+  .toast .sub { font-size: 12px; color: #b9b4a8; margin-top: 8px; line-height: 1.6; }
+  .toast a { color: var(--paper); text-decoration: underline; text-underline-offset: 3px; }
+  .toast a:hover { color: var(--red); }
+
   @media (max-width: 900px) {
     .mast { grid-template-columns: 1fr; }
     .mast .right { text-align: left; }
@@ -129,6 +142,11 @@
 </head>
 <body>
 <div class="bar"><div class="red"></div></div>
+<div id="toast" class="toast" role="alert">
+  <div class="hd"><span class="sq"></span><span id="toast-hd">BOUNTY TAKEN</span></div>
+  <div class="msg" id="toast-msg"></div>
+  <div class="sub" id="toast-sub"></div>
+</div>
 <div class="wrap">
 
   <div class="mast">
@@ -233,7 +251,7 @@ function renderGrid() {
     (!q || (i.title + i.n + i.note + i.by).toLowerCase().includes(q.toLowerCase()))
   );
   document.getElementById("grid").innerHTML = list.length ? list.map(i => `
-    <div class="row">
+    <div class="row" data-n="${i.n}" data-st="${i.status}">
       <div class="no">#${String(i.n).padStart(2, "0")}</div>
       <div class="body">
         <h3><span class="cat">${i.cat} / ${i.diff}</span><a href="https://github.com/${D.repo}/issues/${i.n}" target="_blank">${i.title.replace(/^\[[^\]]+\]\s*/, "")}</a></h3>
@@ -243,7 +261,36 @@ function renderGrid() {
       <div class="pts">${i.pts != null ? i.pts + "<small>CP</small>" : '<span class="unpriced">未定价</span>'}</div>
       <div class="st"><span class="mk ${mkFor(i.status)}"></span><span class="tx">${i.status}</span></div>
     </div>`).join("") : `<div class="empty">— 没有匹配的标的</div>`;
+
+  document.querySelectorAll("#grid .row").forEach(r => r.addEventListener("click", e => {
+    if (e.target.closest("a")) return;          // 标题链接照常跳转
+    if (r.dataset.st === "竞赏中") return;       // 还能抢的标的，不弹晚到提醒
+    showToast(r.dataset.st, r.dataset.n);
+  }));
 }
+
+const FLAVOR = {
+  "已认领": { hd: "BOUNTY TAKEN · 任务被接取",
+              msg: "亲爱的冒险者，你来晚了，这个悬赏被抢走了。",
+              sub: n => `不服可以围观战况——<a href="https://github.com/${D.repo}/issues/${n}" target="_blank">issue #${n}</a>，或蹲下一个标的。` },
+  "待验收": { hd: "UNDER REVIEW · 验收排队",
+              msg: "该悬赏已交付，正在验收排队中。",
+              sub: n => `复跑读数一旦入账，积分落袋——<a href="https://github.com/${D.repo}/issues/${n}" target="_blank">issue #${n}</a>。` },
+};
+
+function showToast(st, n) {
+  const f = FLAVOR[st];
+  if (!f) return;
+  document.getElementById("toast-hd").textContent = f.hd;
+  document.getElementById("toast-msg").textContent = f.msg;
+  document.getElementById("toast-sub").innerHTML = f.sub(n);
+  const t = document.getElementById("toast");
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 6000);
+}
+document.getElementById("toast").addEventListener("click",
+  () => document.getElementById("toast").classList.remove("show"));
 
 document.getElementById("reds").innerHTML =
   `<tr><th style="width:52%">失败用例 / Failing Test</th><th>备注 / Note</th></tr>` +
